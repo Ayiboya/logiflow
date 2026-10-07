@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { InventoryItem } from '@/types/logistics';
-import { X, Boxes, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 const inventorySchema = z.object({
   name: z.string().min(2, 'Item name must be at least 2 characters'),
@@ -18,10 +18,21 @@ const inventorySchema = z.object({
     'Fashion & Retail',
   ]),
   stock: z.coerce.number().min(0, 'Initial stock cannot be negative'),
-  reorderPoint: z.coerce.number().min(1, 'Reorder threshold must be at least 1'),
-  unit: z.string().min(1, 'Unit of measurement is required (e.g. bags, cartons, units)'),
-  unitPrice: z.coerce.number().min(0.1, 'Price must be greater than 0'),
-  warehouseLocation: z.string().min(2, 'Warehouse bay / depot is required'),
+  reorderPoint: z.coerce
+    .number()
+    .min(1, 'Reorder threshold must be at least 1'),
+  unit: z
+    .string()
+    .min(1, 'Unit of measurement is required (e.g. bags, cartons, units)'),
+  unitPrice: z.coerce
+    .number()
+    .min(0.1, 'Price must be greater than 0'),
+  weightPerUnitKg: z.coerce
+    .number()
+    .min(0.01, 'Weight must be greater than 0'),
+  warehouseLocation: z
+    .string()
+    .min(2, 'Warehouse bay / depot is required'),
 });
 
 type InventoryFormData = z.infer<typeof inventorySchema>;
@@ -29,7 +40,9 @@ type InventoryFormData = z.infer<typeof inventorySchema>;
 interface AddInventoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct: (item: Omit<InventoryItem, 'id' | 'updatedAt'>) => void;
+  onAddProduct: (
+    item: Omit<InventoryItem, 'id' | 'updatedAt'>
+  ) => void;
 }
 
 export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
@@ -52,6 +65,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
       reorderPoint: 15,
       unit: 'bags',
       unitPrice: 120.0,
+      weightPerUnitKg: 50,
       warehouseLocation: 'Tema Depot Bay 1',
     },
   });
@@ -67,15 +81,19 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in">
       <div className="bg-white rounded-2xl border border-borderBrand shadow-2xl max-w-lg w-full overflow-hidden">
+
         {/* Header */}
         <div className="p-5 border-b border-borderBrand flex items-center justify-between bg-paper">
           <div>
             <p className="eyebrow">WAREHOUSE REGISTRATION</p>
+
             <h3 className="text-lg font-extrabold text-ink">
               Register New Inventory SKU
             </h3>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg border border-borderBrand hover:bg-white text-ink transition"
           >
@@ -84,119 +102,217 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onFormSubmit)} className="p-5 space-y-4">
+        <form
+          onSubmit={handleSubmit(onFormSubmit)}
+          className="p-5 space-y-4"
+        >
+
+          {/* Product Name */}
           <div>
             <label className="block text-xs font-semibold text-ink mb-1">
               Product / Commodity Name *
             </label>
+
             <input
               type="text"
               {...register('name')}
               placeholder="e.g. Dangote 42.5R Portland Cement (50kg)"
               className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary"
             />
+
             {errors.name && (
-              <p className="text-[11px] text-danger mt-0.5">{errors.name.message}</p>
+              <p className="text-[11px] text-danger mt-0.5">
+                {errors.name.message}
+              </p>
             )}
           </div>
 
+          {/* SKU + Category */}
           <div className="grid grid-cols-2 gap-3">
+
+            {/* SKU */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
                 SKU Identifier *
               </label>
+
               <input
                 type="text"
                 {...register('sku')}
                 placeholder="CEM-DAN-50"
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase"
               />
+
               {errors.sku && (
-                <p className="text-[11px] text-danger mt-0.5">{errors.sku.message}</p>
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.sku.message}
+                </p>
               )}
             </div>
 
+            {/* Category */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
                 Industry Category *
               </label>
+
               <select
                 {...register('category')}
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary bg-white"
               >
-                <option value="Building Materials">Building Materials</option>
-                <option value="FMCG / Food">FMCG / Food</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Agrochemicals">Agrochemicals</option>
-                <option value="Fashion & Retail">Fashion & Retail</option>
+                <option value="Building Materials">
+                  Building Materials
+                </option>
+
+                <option value="FMCG / Food">
+                  FMCG / Food
+                </option>
+
+                <option value="Electronics">
+                  Electronics
+                </option>
+
+                <option value="Agrochemicals">
+                  Agrochemicals
+                </option>
+
+                <option value="Fashion & Retail">
+                  Fashion & Retail
+                </option>
               </select>
             </div>
           </div>
 
+          {/* Stock + Unit + Price */}
           <div className="grid grid-cols-3 gap-3">
+
+            {/* Starting Stock */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
                 Starting Stock *
               </label>
+
               <input
                 type="number"
                 {...register('stock')}
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary font-mono"
               />
+
+              {errors.stock && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.stock.message}
+                </p>
+              )}
             </div>
 
+            {/* Unit */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
-                Unit (e.g. bags) *
+                Unit *
               </label>
+
               <input
                 type="text"
                 {...register('unit')}
                 placeholder="bags, units, kg"
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary"
               />
+
+              {errors.unit && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.unit.message}
+                </p>
+              )}
             </div>
 
+            {/* Unit Price */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
                 Unit Price (GH₵) *
               </label>
+
               <input
                 type="number"
                 step="0.01"
                 {...register('unitPrice')}
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary font-mono"
               />
+
+              {errors.unitPrice && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.unitPrice.message}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Reorder Point + Weight + Location */}
+          <div className="grid grid-cols-3 gap-3">
+
+            {/* Reorder Point */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
-                Low-Stock Alert Trigger *
+                Low-Stock Alert *
               </label>
+
               <input
                 type="number"
                 {...register('reorderPoint')}
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary font-mono"
               />
+
+              {errors.reorderPoint && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.reorderPoint.message}
+                </p>
+              )}
             </div>
 
+            {/* Weight */}
+            <div>
+              <label className="block text-xs font-semibold text-ink mb-1">
+                Weight / Unit (kg) *
+              </label>
+
+              <input
+                type="number"
+                step="0.01"
+                {...register('weightPerUnitKg')}
+                placeholder="e.g. 50"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+              />
+
+              {errors.weightPerUnitKg && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.weightPerUnitKg.message}
+                </p>
+              )}
+            </div>
+
+            {/* Warehouse Location */}
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">
                 Depot / Bay Location *
               </label>
+
               <input
                 type="text"
                 {...register('warehouseLocation')}
                 placeholder="Tema Yard B-02"
                 className="w-full text-xs px-3 py-2 rounded-lg border border-borderBrand focus:outline-none focus:ring-2 focus:ring-primary"
               />
+
+              {errors.warehouseLocation && (
+                <p className="text-[11px] text-danger mt-0.5">
+                  {errors.warehouseLocation.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Actions */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-borderBrand">
+
             <button
               type="button"
               onClick={onClose}
@@ -204,6 +320,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
             >
               Cancel
             </button>
+
             <button
               type="submit"
               className="px-5 py-2 rounded-xl bg-ink text-white hover:bg-ink/90 text-xs font-bold transition flex items-center gap-1.5 shadow-md"
@@ -211,7 +328,9 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
               <Plus className="w-4 h-4 text-primary" />
               <span>Save Product to Catalog</span>
             </button>
+
           </div>
+
         </form>
       </div>
     </div>
